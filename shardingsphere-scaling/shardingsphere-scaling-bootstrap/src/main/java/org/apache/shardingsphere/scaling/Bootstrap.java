@@ -27,8 +27,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.infra.yaml.engine.YamlEngine;
 import org.apache.shardingsphere.scaling.core.config.ScalingContext;
@@ -41,7 +39,6 @@ import java.io.IOException;
 /**
  * Bootstrap of ShardingSphere-Scaling.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
 public final class Bootstrap {
     
@@ -49,15 +46,28 @@ public final class Bootstrap {
     
     private static final String DEFAULT_CONFIG_FILE_NAME = "server.yaml";
     
+    public Bootstrap(final ServerConfiguration serverConfiguration) {
+        initServerConfig(serverConfiguration);
+    }
+    
+    public Bootstrap(final String serverConfigurationFile) throws IOException {
+        File yamlFile = new File(serverConfigurationFile);
+        ServerConfiguration serverConfiguration = YamlEngine.unmarshal(yamlFile, ServerConfiguration.class);
+        Preconditions.checkNotNull(serverConfiguration, "Server configuration file `%s` is invalid.", yamlFile.getName());
+        initServerConfig(serverConfiguration);
+    }
+    
+    private void initServerConfig(final ServerConfiguration serverConfiguration) {
+        log.info("Init server config");
+        ScalingContext.getInstance().init(serverConfiguration);
+    }
+    
     /**
-     * Main entry.
+     * Start.
      *
-     * @param args running args
-     * @throws IOException IO exception
-     * @throws InterruptedException Interrupted exception
+     * @throws InterruptedException interrupted ex
      */
-    public static void main(final String[] args) throws IOException, InterruptedException {
-        initServerConfig();
+    public void start() throws InterruptedException {
         log.info("ShardingSphere-Scaling Startup");
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -78,11 +88,14 @@ public final class Bootstrap {
         }
     }
     
-    private static void initServerConfig() throws IOException {
-        log.info("Init server config");
-        File yamlFile = new File(Resources.getResource(DEFAULT_CONFIG_PATH + DEFAULT_CONFIG_FILE_NAME).getPath());
-        ServerConfiguration serverConfig = YamlEngine.unmarshal(yamlFile, ServerConfiguration.class);
-        Preconditions.checkNotNull(serverConfig, "Server configuration file `%s` is invalid.", yamlFile.getName());
-        ScalingContext.getInstance().init(serverConfig);
+    /**
+     * Standalone bootstrap main entry.
+     *
+     * @param args running args
+     * @throws IOException IO exception
+     * @throws InterruptedException Interrupted exception
+     */
+    public static void main(final String[] args) throws IOException, InterruptedException {
+        new Bootstrap(Resources.getResource(DEFAULT_CONFIG_PATH + DEFAULT_CONFIG_FILE_NAME).getPath()).start();
     }
 }
