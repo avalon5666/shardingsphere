@@ -19,6 +19,7 @@ package org.apache.shardingsphere.scaling.mysql.binlog.event;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.shardingsphere.db.protocol.mysql.packet.command.query.binary.execute.MySQLNullBitmap;
 
 import java.io.Serializable;
 import java.util.List;
@@ -30,7 +31,11 @@ import java.util.List;
 @Getter
 public final class UpdateRowsEvent extends AbstractRowsEvent {
     
+    private MySQLNullBitmap beforeColumnsPresentBitmap;
+    
     private List<Serializable[]> beforeRows;
+    
+    private MySQLNullBitmap afterColumnsPresentBitmap;
     
     private List<Serializable[]> afterRows;
 }

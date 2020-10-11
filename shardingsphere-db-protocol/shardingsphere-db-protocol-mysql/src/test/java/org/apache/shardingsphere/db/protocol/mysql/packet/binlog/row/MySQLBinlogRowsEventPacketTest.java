@@ -64,7 +64,7 @@ public final class MySQLBinlogRowsEventPacketTest {
         when(tableMapEventPacket.getColumnDefs()).thenReturn(columnDefs);
         when(payload.readInt6()).thenReturn(1L);
         when(payload.readInt2()).thenReturn(2);
-        when(payload.readIntLenenc()).thenReturn(1L);
+        when(payload.readIntLenenc()).thenReturn(2L);
         when(payload.getByteBuf()).thenReturn(byteBuf);
         when(byteBuf.isReadable()).thenReturn(true, false);
     }
@@ -72,16 +72,18 @@ public final class MySQLBinlogRowsEventPacketTest {
     private void mockColumnDefs() {
         columnDefs = new ArrayList<>();
         columnDefs.add(new MySQLBinlogColumnDef(MySQLColumnType.MYSQL_TYPE_LONGLONG));
+        columnDefs.add(new MySQLBinlogColumnDef(MySQLColumnType.MYSQL_TYPE_FLOAT));
     }
     
     @Test
     public void assertReadWriteRowV1WithoutNullValue() {
+        when(payload.readInt1()).thenReturn(0xFF, 0x00);
         when(binlogEventHeader.getEventType()).thenReturn(MySQLBinlogEventType.WRITE_ROWS_EVENTv1.getValue());
         when(payload.readInt8()).thenReturn(Long.MAX_VALUE);
         MySQLBinlogRowsEventPacket actual = new MySQLBinlogRowsEventPacket(binlogEventHeader, payload);
         actual.readRows(tableMapEventPacket, payload);
         assertBinlogRowsEventV1BeforeRows(actual);
-        assertFalse(actual.getColumnsPresentBitmap().isNullParameter(0));
+        assertTrue(actual.getColumnsPresentBitmap().isNullParameter(0));
         assertNull(actual.getColumnsPresentBitmap2());
         assertThat(actual.getRows().size(), is(1));
         assertThat(actual.getRows().get(0)[0], is(Long.MAX_VALUE));
@@ -104,13 +106,14 @@ public final class MySQLBinlogRowsEventPacketTest {
     
     @Test
     public void assertReadUpdateRowV1WithoutNullValue() {
+        when(payload.readInt1()).thenReturn(0xFF, 0xFF, 0x00, 0x00);
         when(binlogEventHeader.getEventType()).thenReturn(MySQLBinlogEventType.UPDATE_ROWS_EVENTv1.getValue());
         when(payload.readInt8()).thenReturn(Long.MAX_VALUE, Long.MIN_VALUE);
         MySQLBinlogRowsEventPacket actual = new MySQLBinlogRowsEventPacket(binlogEventHeader, payload);
         actual.readRows(tableMapEventPacket, payload);
         assertBinlogRowsEventV1BeforeRows(actual);
-        assertFalse(actual.getColumnsPresentBitmap().isNullParameter(0));
-        assertFalse(actual.getColumnsPresentBitmap2().isNullParameter(0));
+        assertTrue(actual.getColumnsPresentBitmap().isNullParameter(0));
+        assertTrue(actual.getColumnsPresentBitmap2().isNullParameter(0));
         assertThat(actual.getRows().size(), is(1));
         assertThat(actual.getRows().get(0)[0], is(Long.MAX_VALUE));
         assertThat(actual.getRows2().size(), is(1));
@@ -121,17 +124,18 @@ public final class MySQLBinlogRowsEventPacketTest {
         assertThat(actual.getTableId(), is(1L));
         assertThat(actual.getFlags(), is(2));
         verify(payload, never()).skipReserved(2);
-        assertThat(actual.getColumnNumber(), is(1));
+        assertThat(actual.getColumnNumber(), is(2));
     }
     
     @Test
     public void assertReadWriteRowV2WithoutNullValue() {
+        when(payload.readInt1()).thenReturn(0xFF, 0x00);
         when(binlogEventHeader.getEventType()).thenReturn(MySQLBinlogEventType.WRITE_ROWS_EVENTv2.getValue());
         when(payload.readInt8()).thenReturn(Long.MAX_VALUE);
         MySQLBinlogRowsEventPacket actual = new MySQLBinlogRowsEventPacket(binlogEventHeader, payload);
         actual.readRows(tableMapEventPacket, payload);
         assertBinlogRowsEventV2BeforeRows(actual);
-        assertFalse(actual.getColumnsPresentBitmap().isNullParameter(0));
+        assertTrue(actual.getColumnsPresentBitmap().isNullParameter(0));
         assertNull(actual.getColumnsPresentBitmap2());
         assertThat(actual.getRows().size(), is(1));
         assertThat(actual.getRows().get(0)[0], is(Long.MAX_VALUE));
@@ -154,23 +158,62 @@ public final class MySQLBinlogRowsEventPacketTest {
     
     @Test
     public void assertReadUpdateRowV2WithoutNullValue() {
+        when(payload.readInt1()).thenReturn(0xFF, 0xFF, 0x00, 0x00);
         when(binlogEventHeader.getEventType()).thenReturn(MySQLBinlogEventType.UPDATE_ROWS_EVENTv2.getValue());
         when(payload.readInt8()).thenReturn(Long.MAX_VALUE, Long.MIN_VALUE);
         MySQLBinlogRowsEventPacket actual = new MySQLBinlogRowsEventPacket(binlogEventHeader, payload);
         actual.readRows(tableMapEventPacket, payload);
         assertBinlogRowsEventV2BeforeRows(actual);
-        assertFalse(actual.getColumnsPresentBitmap().isNullParameter(0));
-        assertFalse(actual.getColumnsPresentBitmap2().isNullParameter(0));
+        assertTrue(actual.getColumnsPresentBitmap().isNullParameter(0));
+        assertTrue(actual.getColumnsPresentBitmap2().isNullParameter(0));
         assertThat(actual.getRows().size(), is(1));
         assertThat(actual.getRows().get(0)[0], is(Long.MAX_VALUE));
         assertThat(actual.getRows2().size(), is(1));
         assertThat(actual.getRows2().get(0)[0], is(Long.MIN_VALUE));
     }
     
+    @Test
+    public void assertMinimalBinlogRowImageReadUpdateRowV2WithoutNullValue() {
+        when(payload.readInt1()).thenReturn(0x01, 0x02, 0x00, 0x00);
+        when(binlogEventHeader.getEventType()).thenReturn(MySQLBinlogEventType.UPDATE_ROWS_EVENTv2.getValue());
+        when(payload.readInt8()).thenReturn(Long.MAX_VALUE);
+        when(byteBuf.readFloatLE()).thenReturn(Float.MIN_VALUE);
+        MySQLBinlogRowsEventPacket actual = new MySQLBinlogRowsEventPacket(binlogEventHeader, payload);
+        actual.readRows(tableMapEventPacket, payload);
+        assertBinlogRowsEventV2BeforeRows(actual);
+        assertTrue(actual.getColumnsPresentBitmap().isNullParameter(0));
+        assertFalse(actual.getColumnsPresentBitmap().isNullParameter(1));
+        assertFalse(actual.getColumnsPresentBitmap2().isNullParameter(0));
+        assertTrue(actual.getColumnsPresentBitmap2().isNullParameter(1));
+        assertThat(actual.getRows().size(), is(1));
+        assertThat(actual.getRows().get(0)[0], is(Long.MAX_VALUE));
+        assertNull(actual.getRows().get(0)[1]);
+        assertThat(actual.getRows2().size(), is(1));
+        assertNull(actual.getRows2().get(0)[0]);
+        assertThat(actual.getRows2().get(0)[1], is(Float.MIN_VALUE));
+    }
+    
+    @Test
+    public void assertMinimalBinlogRowImageReadDeleteRowV2WithoutNullValue() {
+        when(payload.readInt1()).thenReturn(0x01, 0x00);
+        when(binlogEventHeader.getEventType()).thenReturn(MySQLBinlogEventType.DELETE_ROWS_EVENTv2.getValue());
+        when(payload.readInt8()).thenReturn(Long.MAX_VALUE);
+        MySQLBinlogRowsEventPacket actual = new MySQLBinlogRowsEventPacket(binlogEventHeader, payload);
+        actual.readRows(tableMapEventPacket, payload);
+        assertBinlogRowsEventV2BeforeRows(actual);
+        assertTrue(actual.getColumnsPresentBitmap().isNullParameter(0));
+        assertFalse(actual.getColumnsPresentBitmap().isNullParameter(1));
+        assertNull(actual.getColumnsPresentBitmap2());
+        assertThat(actual.getRows().size(), is(1));
+        assertThat(actual.getRows().get(0)[0], is(Long.MAX_VALUE));
+        assertNull(actual.getRows().get(0)[1]);
+        assertThat(actual.getRows2().size(), is(0));
+    }
+    
     private void assertBinlogRowsEventV2BeforeRows(final MySQLBinlogRowsEventPacket actual) {
         assertThat(actual.getTableId(), is(1L));
         assertThat(actual.getFlags(), is(2));
         verify(payload).skipReserved(0);
-        assertThat(actual.getColumnNumber(), is(1));
+        assertThat(actual.getColumnNumber(), is(2));
     }
 }

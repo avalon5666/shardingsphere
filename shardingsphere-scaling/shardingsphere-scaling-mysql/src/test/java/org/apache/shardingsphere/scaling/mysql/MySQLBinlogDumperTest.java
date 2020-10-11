@@ -19,6 +19,7 @@ package org.apache.shardingsphere.scaling.mysql;
 
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.map.HashedMap;
+import org.apache.shardingsphere.db.protocol.mysql.packet.command.query.binary.execute.MySQLNullBitmap;
 import org.apache.shardingsphere.scaling.core.config.DumperConfiguration;
 import org.apache.shardingsphere.scaling.core.config.JDBCScalingDataSourceConfiguration;
 import org.apache.shardingsphere.scaling.core.config.ScalingContext;
@@ -50,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -116,13 +118,85 @@ public final class MySQLBinlogDumperTest {
         beforeRows.add(new String[]{"1", "order_old"});
         List<Serializable[]> afterRows = new ArrayList<>(1);
         afterRows.add(new String[]{"1", "order_new"});
+        MySQLNullBitmap beforeNullBitmap = new MySQLNullBitmap(2, 0);
+        beforeNullBitmap.setNullBit(0);
+        beforeNullBitmap.setNullBit(1);
+        rowsEvent.setBeforeColumnsPresentBitmap(beforeNullBitmap);
         rowsEvent.setBeforeRows(beforeRows);
+        MySQLNullBitmap afterNullBitmap = new MySQLNullBitmap(2, 0);
+        afterNullBitmap.setNullBit(0);
+        afterNullBitmap.setNullBit(1);
+        rowsEvent.setAfterColumnsPresentBitmap(afterNullBitmap);
         rowsEvent.setAfterRows(afterRows);
         invokeHandleEvent(new JdbcUri(URL), rowsEvent);
         List<Record> records = channel.fetchRecords(1, 0);
         assertThat(records.size(), is(1));
         assertTrue(records.get(0) instanceof DataRecord);
         assertThat(((DataRecord) records.get(0)).getType(), is(ScalingConstant.UPDATE));
+    }
+    
+    @Test
+    public void assertUpdateRowsColumnUpdatedEvent() {
+        assertAfterColumnWithoutPresent();
+        assertAfterColumnPresentAndBeforeColumnWithoutPresent();
+        assertAfterAndBeforeColumnBothPresent();
+    }
+    
+    private void assertAfterColumnWithoutPresent() {
+        UpdateRowsEvent rowsEvent = mockUpdateRowsEvent();
+        MySQLNullBitmap beforeNullBitmap = new MySQLNullBitmap(2, 0);
+        rowsEvent.setBeforeColumnsPresentBitmap(beforeNullBitmap);
+        MySQLNullBitmap afterNullBitmap = new MySQLNullBitmap(2, 0);
+        rowsEvent.setAfterColumnsPresentBitmap(afterNullBitmap);
+        invokeHandleEvent(new JdbcUri(URL), rowsEvent);
+        List<Record> records = channel.fetchRecords(1, 0);
+        assertFalse(((DataRecord) records.get(0)).getColumns().get(0).isUpdated());
+    }
+    
+    private void assertAfterColumnPresentAndBeforeColumnWithoutPresent() {
+        UpdateRowsEvent rowsEvent;
+        MySQLNullBitmap beforeNullBitmap;
+        MySQLNullBitmap afterNullBitmap;
+        List<Record> records;
+        rowsEvent = mockUpdateRowsEvent();
+        beforeNullBitmap = new MySQLNullBitmap(2, 0);
+        rowsEvent.setBeforeColumnsPresentBitmap(beforeNullBitmap);
+        afterNullBitmap = new MySQLNullBitmap(2, 0);
+        afterNullBitmap.setNullBit(0);
+        rowsEvent.setAfterColumnsPresentBitmap(afterNullBitmap);
+        invokeHandleEvent(new JdbcUri(URL), rowsEvent);
+        records = channel.fetchRecords(1, 0);
+        assertTrue(((DataRecord) records.get(0)).getColumns().get(0).isUpdated());
+    }
+    
+    private void assertAfterAndBeforeColumnBothPresent() {
+        UpdateRowsEvent rowsEvent;
+        MySQLNullBitmap beforeNullBitmap;
+        MySQLNullBitmap afterNullBitmap;
+        List<Record> records;
+        rowsEvent = mockUpdateRowsEvent();
+        beforeNullBitmap = new MySQLNullBitmap(2, 0);
+        beforeNullBitmap.setNullBit(0);
+        rowsEvent.setBeforeColumnsPresentBitmap(beforeNullBitmap);
+        afterNullBitmap = new MySQLNullBitmap(2, 0);
+        afterNullBitmap.setNullBit(0);
+        rowsEvent.setAfterColumnsPresentBitmap(afterNullBitmap);
+        invokeHandleEvent(new JdbcUri(URL), rowsEvent);
+        records = channel.fetchRecords(1, 0);
+        assertTrue(((DataRecord) records.get(0)).getColumns().get(0).isUpdated());
+    }
+    
+    private UpdateRowsEvent mockUpdateRowsEvent() {
+        UpdateRowsEvent rowsEvent = new UpdateRowsEvent();
+        rowsEvent.setSchemaName("");
+        rowsEvent.setTableName("t_order");
+        List<Serializable[]> beforeRows = new ArrayList<>(1);
+        beforeRows.add(new String[]{"1", "1"});
+        List<Serializable[]> afterRows = new ArrayList<>(1);
+        afterRows.add(new String[]{"2", "2"});
+        rowsEvent.setBeforeRows(beforeRows);
+        rowsEvent.setAfterRows(afterRows);
+        return rowsEvent;
     }
     
     @Test

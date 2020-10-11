@@ -140,7 +140,9 @@ public final class MySQLBinlogEventPacketDecoder extends ByteToMessageDecoder {
         rowsEventPacket.readRows(binlogContext.getTableMapEvent(rowsEventPacket.getTableId()), payload);
         UpdateRowsEvent result = new UpdateRowsEvent();
         initRowsEvent(result, binlogEventHeader, rowsEventPacket.getTableId());
+        result.setBeforeColumnsPresentBitmap(rowsEventPacket.getColumnsPresentBitmap());
         result.setBeforeRows(rowsEventPacket.getRows());
+        result.setAfterColumnsPresentBitmap(rowsEventPacket.getColumnsPresentBitmap2());
         result.setAfterRows(rowsEventPacket.getRows2());
         return result;
     }

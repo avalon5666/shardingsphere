@@ -71,7 +71,7 @@ public final class MySQLBinlogRowsEventPacket extends AbstractMySQLBinlogEventPa
     
     private boolean isRowsEventVersion2(final int eventType) {
         return MySQLBinlogEventType.WRITE_ROWS_EVENTv2.getValue() == eventType || MySQLBinlogEventType.UPDATE_ROWS_EVENTv2.getValue() == eventType
-            || MySQLBinlogEventType.DELETE_ROWS_EVENTv2.getValue() == eventType;
+                || MySQLBinlogEventType.DELETE_ROWS_EVENTv2.getValue() == eventType;
     }
     
     private MySQLNullBitmap readUpdateColumnsPresentBitmap(final MySQLPacketPayload payload) {
@@ -91,9 +91,9 @@ public final class MySQLBinlogRowsEventPacket extends AbstractMySQLBinlogEventPa
     public void readRows(final MySQLBinlogTableMapEventPacket tableMapEventPacket, final MySQLPacketPayload payload) {
         List<MySQLBinlogColumnDef> columnDefs = tableMapEventPacket.getColumnDefs();
         while (hasNextRow(payload)) {
-            rows.add(readRow(columnDefs, payload));
+            rows.add(readRow(columnDefs, columnsPresentBitmap, payload));
             if (isUpdateRowsEvent(getBinlogEventHeader().getEventType())) {
-                rows2.add(readRow(columnDefs, payload));
+                rows2.add(readRow(columnDefs, columnsPresentBitmap2, payload));
             }
         }
     }
@@ -102,14 +102,33 @@ public final class MySQLBinlogRowsEventPacket extends AbstractMySQLBinlogEventPa
         return payload.getByteBuf().isReadable();
     }
     
-    private Serializable[] readRow(final List<MySQLBinlogColumnDef> columnDefs, final MySQLPacketPayload payload) {
-        MySQLNullBitmap nullBitmap = new MySQLNullBitmap(columnNumber, payload);
+    private Serializable[] readRow(final List<MySQLBinlogColumnDef> columnDefs, final MySQLNullBitmap columnsPresentBitmap, final MySQLPacketPayload payload) {
+        MySQLNullBitmap nullBitmap = new MySQLNullBitmap(calcBitsSet(columnsPresentBitmap), payload);
         Serializable[] result = new Serializable[columnNumber];
-        for (int i = 0; i < columnNumber; i++) {
-            MySQLBinlogColumnDef columnDef = columnDefs.get(i);
-            result[i] = nullBitmap.isNullParameter(i) ? null : MySQLBinlogProtocolValueFactory.getBinlogProtocolValue(columnDef.getColumnType()).read(columnDef, payload);
+        for (int columnIndex = 0, nullBitmapIndex = 0; columnIndex < columnNumber; columnIndex++) {
+            if (!isColumnPresent(columnsPresentBitmap, columnIndex)) {
+                result[columnIndex] = null;
+                continue;
+            }
+            MySQLBinlogColumnDef columnDef = columnDefs.get(columnIndex);
+            result[columnIndex] = nullBitmap.isNullParameter(nullBitmapIndex) ? null : MySQLBinlogProtocolValueFactory.getBinlogProtocolValue(columnDef.getColumnType()).read(columnDef, payload);
+            nullBitmapIndex++;
         }
         return result;
+    }
+    
+    private int calcBitsSet(final MySQLNullBitmap columnsPresentBitmap) {
+        int result = 0;
+        for (int i = 0; i < columnNumber; i++) {
+            if (columnsPresentBitmap.isNullParameter(i)) {
+                result++;
+            }
+        }
+        return result;
+    }
+    
+    private boolean isColumnPresent(MySQLNullBitmap columnsPresentBitmap, int i) {
+        return columnsPresentBitmap.isNullParameter(i);
     }
     
     @Override
