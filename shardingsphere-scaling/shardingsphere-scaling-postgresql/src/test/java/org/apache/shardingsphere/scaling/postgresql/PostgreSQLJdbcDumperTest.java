@@ -22,6 +22,7 @@ import org.apache.shardingsphere.scaling.core.config.DumperConfiguration;
 import org.apache.shardingsphere.scaling.core.config.InventoryDumperConfiguration;
 import org.apache.shardingsphere.scaling.core.config.JDBCScalingDataSourceConfiguration;
 import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +44,7 @@ public final class PostgreSQLJdbcDumperTest {
     @Before
     public void setUp() {
         dataSourceManager = new DataSourceManager();
-        postgreSQLJdbcDumper = new PostgreSQLJdbcDumper(mockInventoryDumperConfiguration(), dataSourceManager);
+        postgreSQLJdbcDumper = new PostgreSQLJdbcDumper(mockInventoryDumperConfiguration(), new TaskContext(1, "", dataSourceManager));
     }
     
     private InventoryDumperConfiguration mockInventoryDumperConfiguration() {

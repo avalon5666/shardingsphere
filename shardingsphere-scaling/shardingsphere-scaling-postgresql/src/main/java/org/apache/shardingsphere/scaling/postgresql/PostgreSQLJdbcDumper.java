@@ -18,8 +18,8 @@
 package org.apache.shardingsphere.scaling.postgresql;
 
 import org.apache.shardingsphere.scaling.core.config.InventoryDumperConfiguration;
-import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.execute.executor.dumper.AbstractJDBCDumper;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,8 +31,8 @@ import java.sql.SQLException;
  */
 public final class PostgreSQLJdbcDumper extends AbstractJDBCDumper {
     
-    public PostgreSQLJdbcDumper(final InventoryDumperConfiguration inventoryDumperConfig, final DataSourceManager dataSourceManager) {
-        super(inventoryDumperConfig, dataSourceManager);
+    public PostgreSQLJdbcDumper(final InventoryDumperConfiguration inventoryDumperConfig, final TaskContext taskContext) {
+        super(inventoryDumperConfig, taskContext);
     }
     
     @Override

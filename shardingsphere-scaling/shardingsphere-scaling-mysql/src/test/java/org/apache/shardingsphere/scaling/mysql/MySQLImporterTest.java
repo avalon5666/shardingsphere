@@ -21,6 +21,7 @@ import org.apache.shardingsphere.scaling.core.config.ImporterConfiguration;
 import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.execute.executor.record.Column;
 import org.apache.shardingsphere.scaling.core.execute.executor.record.DataRecord;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.apache.shardingsphere.scaling.mysql.binlog.BinlogPosition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +42,7 @@ public final class MySQLImporterTest {
     
     @Test
     public void assertCreateSqlBuilder() {
-        MySQLImporter mySQLImporter = new MySQLImporter(importerConfig, dataSourceManager);
+        MySQLImporter mySQLImporter = new MySQLImporter(importerConfig, new TaskContext(1, "", dataSourceManager));
         String insertSQL = mySQLImporter.createSQLBuilder().buildInsertSQL(mockDataRecord());
         assertThat(insertSQL, is("INSERT INTO `t_order`(`id`,`name`) VALUES(?,?)"));
     }

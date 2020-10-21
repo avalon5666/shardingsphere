@@ -21,10 +21,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.infra.metadata.model.physical.model.table.PhysicalTableMetaData;
 import org.apache.shardingsphere.scaling.core.config.InventoryDumperConfiguration;
 import org.apache.shardingsphere.scaling.core.config.JDBCScalingDataSourceConfiguration;
 import org.apache.shardingsphere.scaling.core.constant.ScalingConstant;
-import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.exception.SyncTaskExecuteException;
 import org.apache.shardingsphere.scaling.core.execute.executor.AbstractShardingScalingExecutor;
 import org.apache.shardingsphere.scaling.core.execute.executor.channel.Channel;
@@ -37,9 +37,9 @@ import org.apache.shardingsphere.scaling.core.job.position.InventoryPosition;
 import org.apache.shardingsphere.scaling.core.job.position.NopPosition;
 import org.apache.shardingsphere.scaling.core.job.position.PlaceholderInventoryPosition;
 import org.apache.shardingsphere.scaling.core.job.position.PrimaryKeyPosition;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.apache.shardingsphere.scaling.core.metadata.MetaDataManager;
 import org.apache.shardingsphere.scaling.core.utils.RdbmsConfigurationUtil;
-import org.apache.shardingsphere.infra.metadata.model.physical.model.table.PhysicalTableMetaData;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -56,24 +56,24 @@ public abstract class AbstractJDBCDumper extends AbstractShardingScalingExecutor
     @Getter(AccessLevel.PROTECTED)
     private final InventoryDumperConfiguration inventoryDumperConfiguration;
     
-    private final DataSourceManager dataSourceManager;
+    private final TaskContext taskContext;
     
     private final PhysicalTableMetaData tableMetaData;
     
     @Setter
     private Channel channel;
     
-    protected AbstractJDBCDumper(final InventoryDumperConfiguration inventoryDumperConfig, final DataSourceManager dataSourceManager) {
+    protected AbstractJDBCDumper(final InventoryDumperConfiguration inventoryDumperConfig, final TaskContext taskContext) {
         if (!JDBCScalingDataSourceConfiguration.class.equals(inventoryDumperConfig.getDataSourceConfiguration().getClass())) {
             throw new UnsupportedOperationException("AbstractJDBCDumper only support JDBCDataSourceConfiguration");
         }
         inventoryDumperConfiguration = inventoryDumperConfig;
-        this.dataSourceManager = dataSourceManager;
+        this.taskContext = taskContext;
         tableMetaData = createTableMetaData();
     }
     
     private PhysicalTableMetaData createTableMetaData() {
-        MetaDataManager metaDataManager = new MetaDataManager(dataSourceManager.getDataSource(inventoryDumperConfiguration.getDataSourceConfiguration()));
+        MetaDataManager metaDataManager = new MetaDataManager(taskContext.getDataSourceManager().getDataSource(inventoryDumperConfiguration.getDataSourceConfiguration()));
         return metaDataManager.getTableMetaData(inventoryDumperConfiguration.getTableName());
     }
     
@@ -84,7 +84,7 @@ public abstract class AbstractJDBCDumper extends AbstractShardingScalingExecutor
     }
     
     private void dump() {
-        try (Connection conn = dataSourceManager.getDataSource(inventoryDumperConfiguration.getDataSourceConfiguration()).getConnection()) {
+        try (Connection conn = taskContext.getDataSourceManager().getDataSource(inventoryDumperConfiguration.getDataSourceConfiguration()).getConnection()) {
             String sql = String.format("SELECT * FROM %s %s", inventoryDumperConfiguration.getTableName(), RdbmsConfigurationUtil.getWhereCondition(inventoryDumperConfiguration));
             PreparedStatement ps = createPreparedStatement(conn, sql);
             ResultSet rs = ps.executeQuery();

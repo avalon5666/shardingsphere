@@ -21,6 +21,7 @@ import org.apache.shardingsphere.scaling.core.config.ImporterConfiguration;
 import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.execute.executor.record.Column;
 import org.apache.shardingsphere.scaling.core.execute.executor.record.DataRecord;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.apache.shardingsphere.scaling.postgresql.wal.WalPosition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +43,7 @@ public final class PostgreSQLImporterTest {
     
     @Test
     public void assertCreateSQLBuilder() {
-        PostgreSQLImporter postgreSQLImporter = new PostgreSQLImporter(importerConfig, dataSourceManager);
+        PostgreSQLImporter postgreSQLImporter = new PostgreSQLImporter(importerConfig, new TaskContext(1, "", dataSourceManager));
         String insertSQL = postgreSQLImporter.createSQLBuilder().buildInsertSQL(mockDataRecord());
         assertThat(insertSQL, is("INSERT INTO \"t_order\"(\"id\",\"name\") VALUES(?,?) ON CONFLICT (id) DO NOTHING"));
     }

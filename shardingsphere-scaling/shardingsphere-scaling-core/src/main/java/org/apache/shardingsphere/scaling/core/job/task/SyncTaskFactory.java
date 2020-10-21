@@ -43,19 +43,21 @@ public interface SyncTaskFactory {
     /**
      * Create inventory data sync task.
      *
+     * @param jobId job id
      * @param inventoryDumperConfig inventory dumper configuration
      * @param importerConfig importer configuration
      * @return inventory data sync task
      */
-    InventoryDataScalingTask createInventoryDataSyncTask(InventoryDumperConfiguration inventoryDumperConfig, ImporterConfiguration importerConfig);
+    InventoryDataScalingTask createInventoryDataSyncTask(int jobId, InventoryDumperConfiguration inventoryDumperConfig, ImporterConfiguration importerConfig);
     
     /**
      * Create incremental data sync task.
      *
+     * @param jobId job id
      * @param concurrency concurrency
      * @param dumperConfig   dumper configuration
      * @param importerConfig importer configuration
      * @return incremental data sync task
      */
-    IncrementalDataScalingTask createIncrementalDataSyncTask(int concurrency, DumperConfiguration dumperConfig, ImporterConfiguration importerConfig);
+    IncrementalDataScalingTask createIncrementalDataSyncTask(int jobId, int concurrency, DumperConfiguration dumperConfig, ImporterConfiguration importerConfig);
 }

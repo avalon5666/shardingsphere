@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.infra.yaml.engine.YamlEngine;
 import org.apache.shardingsphere.scaling.core.config.ScalingContext;
 import org.apache.shardingsphere.scaling.core.config.ServerConfiguration;
+import org.apache.shardingsphere.scaling.core.execute.executor.metrics.MetricsServer;
 import org.apache.shardingsphere.scaling.web.HttpServerInitializer;
 
 import java.io.File;
@@ -59,6 +60,7 @@ public final class Bootstrap {
     public static void main(final String[] args) throws IOException, InterruptedException {
         initServerConfig();
         log.info("ShardingSphere-Scaling Startup");
+        MetricsServer.INSTANCE.start(12345);
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

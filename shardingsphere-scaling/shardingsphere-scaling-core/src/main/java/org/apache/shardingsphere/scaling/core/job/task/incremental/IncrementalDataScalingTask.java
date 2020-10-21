@@ -25,15 +25,17 @@ import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.exception.SyncTaskExecuteException;
 import org.apache.shardingsphere.scaling.core.execute.engine.ExecuteCallback;
 import org.apache.shardingsphere.scaling.core.execute.executor.AbstractShardingScalingExecutor;
-import org.apache.shardingsphere.scaling.core.execute.executor.channel.DistributionChannel;
+import org.apache.shardingsphere.scaling.core.execute.executor.channel.Channel;
 import org.apache.shardingsphere.scaling.core.execute.executor.dumper.Dumper;
 import org.apache.shardingsphere.scaling.core.execute.executor.dumper.DumperFactory;
 import org.apache.shardingsphere.scaling.core.execute.executor.importer.Importer;
 import org.apache.shardingsphere.scaling.core.execute.executor.importer.ImporterFactory;
+import org.apache.shardingsphere.scaling.core.execute.executor.metrics.ObservableChannelFactory;
 import org.apache.shardingsphere.scaling.core.execute.executor.record.Record;
 import org.apache.shardingsphere.scaling.core.job.SyncProgress;
 import org.apache.shardingsphere.scaling.core.job.position.IncrementalPosition;
 import org.apache.shardingsphere.scaling.core.job.task.ScalingTask;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,20 +55,24 @@ public final class IncrementalDataScalingTask extends AbstractShardingScalingExe
     
     private final ImporterConfiguration importerConfig;
     
-    private final DataSourceManager dataSourceManager;
+    private final TaskContext taskContext;
     
     private Dumper dumper;
     
     private long delayMillisecond = Long.MAX_VALUE;
     
     @SuppressWarnings("unchecked")
-    public IncrementalDataScalingTask(final int concurrency, final DumperConfiguration dumperConfig, final ImporterConfiguration importerConfig) {
+    public IncrementalDataScalingTask(final int jobId, final int concurrency, final DumperConfiguration dumperConfig, final ImporterConfiguration importerConfig) {
+        taskContext = new TaskContext(jobId, dumperConfig.getDataSourceName(), new DataSourceManager());
         this.concurrency = concurrency;
         this.dumperConfig = dumperConfig;
         this.importerConfig = importerConfig;
-        dataSourceManager = new DataSourceManager();
-        setTaskId(dumperConfig.getDataSourceName());
         setPositionManager(dumperConfig.getPositionManager());
+    }
+    
+    @Override
+    public String getTaskId() {
+        return taskContext.getTaskId();
     }
     
     @Override
@@ -88,19 +94,19 @@ public final class IncrementalDataScalingTask extends AbstractShardingScalingExe
         });
         dumper.start();
         waitForResult(future);
-        dataSourceManager.close();
+        taskContext.getDataSourceManager().close();
     }
     
     private List<Importer> instanceImporters() {
         List<Importer> result = new ArrayList<>(concurrency);
         for (int i = 0; i < concurrency; i++) {
-            result.add(ImporterFactory.newInstance(importerConfig, dataSourceManager));
+            result.add(ImporterFactory.newInstance(importerConfig, taskContext));
         }
         return result;
     }
     
     private void instanceChannel(final Collection<Importer> importers) {
-        DistributionChannel channel = new DistributionChannel(importers.size(), records -> {
+        Channel channel = ObservableChannelFactory.createDistributionChannel(taskContext.getJobId(), taskContext.getTaskId(), importers.size(), records -> {
             Record lastHandledRecord = records.get(records.size() - 1);
             if (lastHandledRecord.getPosition() instanceof IncrementalPosition) {
                 getPositionManager().setPosition((IncrementalPosition) lastHandledRecord.getPosition());

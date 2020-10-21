@@ -21,7 +21,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.shardingsphere.scaling.core.config.ImporterConfiguration;
-import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.apache.shardingsphere.scaling.core.spi.ScalingEntry;
 import org.apache.shardingsphere.scaling.core.spi.ScalingEntryLoader;
 
@@ -35,11 +35,11 @@ public final class ImporterFactory {
      * New instance of importer.
      *
      * @param importerConfig rdbms configuration
-     * @param dataSourceManager data source factory
+     * @param taskContext task context
      * @return importer
      */
-    public static Importer newInstance(final ImporterConfiguration importerConfig, final DataSourceManager dataSourceManager) {
-        return newInstance(importerConfig.getDataSourceConfiguration().getDatabaseType().getName(), importerConfig, dataSourceManager);
+    public static Importer newInstance(final ImporterConfiguration importerConfig, final TaskContext taskContext) {
+        return newInstance(importerConfig.getDataSourceConfiguration().getDatabaseType().getName(), importerConfig, taskContext);
     }
     
     /**
@@ -47,12 +47,12 @@ public final class ImporterFactory {
      *
      * @param databaseType database type
      * @param importerConfig rdbms configuration
-     * @param dataSourceManager data source factory
+     * @param taskContext task context
      * @return importer
      */
     @SneakyThrows(ReflectiveOperationException.class)
-    public static Importer newInstance(final String databaseType, final ImporterConfiguration importerConfig, final DataSourceManager dataSourceManager) {
+    public static Importer newInstance(final String databaseType, final ImporterConfiguration importerConfig, final TaskContext taskContext) {
         ScalingEntry scalingEntry = ScalingEntryLoader.getScalingEntryByDatabaseType(databaseType);
-        return scalingEntry.getImporterClass().getConstructor(ImporterConfiguration.class, DataSourceManager.class).newInstance(importerConfig, dataSourceManager);
+        return scalingEntry.getImporterClass().getConstructor(ImporterConfiguration.class, TaskContext.class).newInstance(importerConfig, taskContext);
     }
 }

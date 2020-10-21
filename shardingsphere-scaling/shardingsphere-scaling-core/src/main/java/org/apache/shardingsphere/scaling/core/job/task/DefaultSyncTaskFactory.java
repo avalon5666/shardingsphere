@@ -38,12 +38,12 @@ public final class DefaultSyncTaskFactory implements SyncTaskFactory {
     }
     
     @Override
-    public InventoryDataScalingTask createInventoryDataSyncTask(final InventoryDumperConfiguration inventoryDumperConfig, final ImporterConfiguration importerConfig) {
-        return new InventoryDataScalingTask(inventoryDumperConfig, importerConfig);
+    public InventoryDataScalingTask createInventoryDataSyncTask(final int jobId, final InventoryDumperConfiguration inventoryDumperConfig, final ImporterConfiguration importerConfig) {
+        return new InventoryDataScalingTask(jobId, inventoryDumperConfig, importerConfig);
     }
     
     @Override
-    public IncrementalDataScalingTask createIncrementalDataSyncTask(final int concurrency, final DumperConfiguration dumperConfig, final ImporterConfiguration importerConfig) {
-        return new IncrementalDataScalingTask(concurrency, dumperConfig, importerConfig);
+    public IncrementalDataScalingTask createIncrementalDataSyncTask(final int jobId, final int concurrency, final DumperConfiguration dumperConfig, final ImporterConfiguration importerConfig) {
+        return new IncrementalDataScalingTask(jobId, concurrency, dumperConfig, importerConfig);
     }
 }

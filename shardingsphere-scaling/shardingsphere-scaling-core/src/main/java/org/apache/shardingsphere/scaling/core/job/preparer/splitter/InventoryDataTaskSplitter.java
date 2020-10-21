@@ -56,12 +56,13 @@ public final class InventoryDataTaskSplitter {
      *
      * @param syncConfig synchronize configuration
      * @param dataSourceManager data source manager
+     * @param jobId job id
      * @return split inventory data task
      */
-    public Collection<ScalingTask<InventoryPosition>> splitInventoryData(final SyncConfiguration syncConfig, final DataSourceManager dataSourceManager) {
+    public Collection<ScalingTask<InventoryPosition>> splitInventoryData(final int jobId, final SyncConfiguration syncConfig, final DataSourceManager dataSourceManager) {
         Collection<ScalingTask<InventoryPosition>> result = new LinkedList<>();
         for (InventoryDumperConfiguration each : splitDumperConfiguration(syncConfig.getConcurrency(), syncConfig.getDumperConfiguration(), dataSourceManager)) {
-            result.add(syncTaskFactory.createInventoryDataSyncTask(each, syncConfig.getImporterConfiguration()));
+            result.add(syncTaskFactory.createInventoryDataSyncTask(jobId, each, syncConfig.getImporterConfiguration()));
         }
         return result;
     }

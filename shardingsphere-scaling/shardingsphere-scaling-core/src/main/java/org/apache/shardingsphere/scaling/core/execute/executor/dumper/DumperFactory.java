@@ -22,8 +22,8 @@ import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.shardingsphere.scaling.core.config.DumperConfiguration;
 import org.apache.shardingsphere.scaling.core.config.InventoryDumperConfiguration;
-import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.job.position.Position;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.apache.shardingsphere.scaling.core.spi.ScalingEntry;
 import org.apache.shardingsphere.scaling.core.spi.ScalingEntryLoader;
 
@@ -37,11 +37,11 @@ public final class DumperFactory {
      * New instance of JDBC dumper.
      *
      * @param inventoryDumperConfig inventory dumper configuration
-     * @param dataSourceManager data source factory
+     * @param taskContext data source factory
      * @return JDBC dumper
      */
-    public static JDBCDumper newInstanceJdbcDumper(final InventoryDumperConfiguration inventoryDumperConfig, final DataSourceManager dataSourceManager) {
-        return newInstanceJdbcDumper(inventoryDumperConfig.getDataSourceConfiguration().getDatabaseType().getName(), inventoryDumperConfig, dataSourceManager);
+    public static JDBCDumper newInstanceJdbcDumper(final InventoryDumperConfiguration inventoryDumperConfig, final TaskContext taskContext) {
+        return newInstanceJdbcDumper(inventoryDumperConfig.getDataSourceConfiguration().getDatabaseType().getName(), inventoryDumperConfig, taskContext);
     }
     
     /**
@@ -49,13 +49,13 @@ public final class DumperFactory {
      *
      * @param databaseType database type
      * @param inventoryDumperConfig inventory dumper configuration
-     * @param dataSourceManager data source factory
+     * @param taskContext data source factory
      * @return JDBC dumper
      */
     @SneakyThrows(ReflectiveOperationException.class)
-    public static JDBCDumper newInstanceJdbcDumper(final String databaseType, final InventoryDumperConfiguration inventoryDumperConfig, final DataSourceManager dataSourceManager) {
+    public static JDBCDumper newInstanceJdbcDumper(final String databaseType, final InventoryDumperConfiguration inventoryDumperConfig, final TaskContext taskContext) {
         ScalingEntry scalingEntry = ScalingEntryLoader.getScalingEntryByDatabaseType(databaseType);
-        return scalingEntry.getJdbcDumperClass().getConstructor(InventoryDumperConfiguration.class, DataSourceManager.class).newInstance(inventoryDumperConfig, dataSourceManager);
+        return scalingEntry.getJdbcDumperClass().getConstructor(InventoryDumperConfiguration.class, TaskContext.class).newInstance(inventoryDumperConfig, taskContext);
     }
     
     /**

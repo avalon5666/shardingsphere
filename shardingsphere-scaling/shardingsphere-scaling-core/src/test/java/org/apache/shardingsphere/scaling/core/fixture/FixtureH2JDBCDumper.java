@@ -18,8 +18,8 @@
 package org.apache.shardingsphere.scaling.core.fixture;
 
 import org.apache.shardingsphere.scaling.core.config.InventoryDumperConfiguration;
-import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.execute.executor.dumper.AbstractJDBCDumper;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,8 +27,8 @@ import java.sql.SQLException;
 
 public final class FixtureH2JDBCDumper extends AbstractJDBCDumper {
     
-    public FixtureH2JDBCDumper(final InventoryDumperConfiguration dumperConfig, final DataSourceManager dataSourceManager) {
-        super(dumperConfig, dataSourceManager);
+    public FixtureH2JDBCDumper(final InventoryDumperConfiguration dumperConfig, final TaskContext taskContext) {
+        super(dumperConfig, taskContext);
     }
     
     @Override

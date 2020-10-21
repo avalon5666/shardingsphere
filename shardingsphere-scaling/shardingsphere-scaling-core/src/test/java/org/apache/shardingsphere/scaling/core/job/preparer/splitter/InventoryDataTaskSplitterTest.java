@@ -72,7 +72,7 @@ public final class InventoryDataTaskSplitterTest {
     @Test
     public void assertSplitInventoryDataWithIntPrimary() throws SQLException {
         initIntPrimaryEnvironment(syncConfig.getDumperConfiguration());
-        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(syncConfig, dataSourceManager);
+        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(1, syncConfig, dataSourceManager);
         assertNotNull(actual);
         assertThat(actual.size(), is(3));
     }
@@ -80,7 +80,7 @@ public final class InventoryDataTaskSplitterTest {
     @Test
     public void assertSplitInventoryDataWithCharPrimary() throws SQLException {
         initCharPrimaryEnvironment(syncConfig.getDumperConfiguration());
-        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(syncConfig, dataSourceManager);
+        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(1, syncConfig, dataSourceManager);
         assertNotNull(actual);
         assertThat(actual.size(), is(1));
     }
@@ -88,7 +88,7 @@ public final class InventoryDataTaskSplitterTest {
     @Test
     public void assertSplitInventoryDataWithUnionPrimary() throws SQLException {
         initUnionPrimaryEnvironment(syncConfig.getDumperConfiguration());
-        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(syncConfig, dataSourceManager);
+        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(1, syncConfig, dataSourceManager);
         assertNotNull(actual);
         assertThat(actual.size(), is(1));
     }
@@ -96,7 +96,7 @@ public final class InventoryDataTaskSplitterTest {
     @Test
     public void assertSplitInventoryDataWithoutPrimary() throws SQLException {
         initNoPrimaryEnvironment(syncConfig.getDumperConfiguration());
-        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(syncConfig, dataSourceManager);
+        Collection<ScalingTask<InventoryPosition>> actual = inventoryDataTaskSplitter.splitInventoryData(1, syncConfig, dataSourceManager);
         assertNotNull(actual);
         assertThat(actual.size(), is(1));
     }

@@ -15,39 +15,47 @@
  * limitations under the License.
  */
 
-package org.apache.shardingsphere.scaling.core.execute.executor;
+package org.apache.shardingsphere.scaling.core.execute.executor.metrics;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.shardingsphere.scaling.core.job.position.Position;
-import org.apache.shardingsphere.scaling.core.job.position.PositionManager;
+import io.prometheus.client.exporter.HTTPServer;
+import io.prometheus.client.hotspot.DefaultExports;
+
+import java.io.IOException;
 
 /**
- * Abstract sharding scaling executor.
+ * Prometheus metrics server.
  */
-@Setter
-@Getter
-public abstract class AbstractShardingScalingExecutor<T extends Position> implements ShardingScalingExecutor {
+public final class MetricsServer {
     
-    @Setter(AccessLevel.PROTECTED)
-    @Getter(AccessLevel.PROTECTED)
-    private boolean running;
+    public static final MetricsServer INSTANCE = new MetricsServer();
     
-    private PositionManager<T> positionManager;
+    private HTTPServer httpServer;
     
-    @Override
-    public void start() {
-        running = true;
+    private boolean isStarted;
+    
+    private MetricsServer() {
+    
     }
     
-    @Override
+    /**
+     * Start.
+     *
+     * @param port port
+     * @throws IOException io exception
+     */
+    public void start(final int port) throws IOException {
+        if (!isStarted) {
+            httpServer = new HTTPServer(port);
+            DefaultExports.initialize();
+        }
+    }
+    
+    /**
+     * Stop.
+     */
     public void stop() {
-        running = false;
-    }
-    
-    @Override
-    public final void run() {
-        start();
+        if (isStarted) {
+            httpServer.stop();
+        }
     }
 }

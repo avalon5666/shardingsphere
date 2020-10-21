@@ -96,7 +96,7 @@ public final class ShardingScalingJobPreparer {
     private void initInventoryDataTasks(final ShardingScalingJob shardingScalingJob, final DataSourceManager dataSourceManager) {
         List<ScalingTask<InventoryPosition>> allInventoryDataTasks = new LinkedList<>();
         for (SyncConfiguration each : shardingScalingJob.getSyncConfigurations()) {
-            allInventoryDataTasks.addAll(inventoryDataTaskSplitter.splitInventoryData(each, dataSourceManager));
+            allInventoryDataTasks.addAll(inventoryDataTaskSplitter.splitInventoryData(shardingScalingJob.getJobId(), each, dataSourceManager));
         }
         for (Collection<ScalingTask<InventoryPosition>> each : JobPrepareUtil.groupInventoryDataTasks(shardingScalingJob.getSyncConfigurations().get(0).getConcurrency(), allInventoryDataTasks)) {
             shardingScalingJob.getInventoryDataTasks().add(syncTaskFactory.createInventoryDataSyncTaskGroup(each));
@@ -107,7 +107,8 @@ public final class ShardingScalingJobPreparer {
         for (SyncConfiguration each : shardingScalingJob.getSyncConfigurations()) {
             ScalingDataSourceConfiguration dataSourceConfig = each.getDumperConfiguration().getDataSourceConfiguration();
             each.getDumperConfiguration().setPositionManager(initPositionManager(databaseType, dataSourceManager.getDataSource(dataSourceConfig)));
-            shardingScalingJob.getIncrementalDataTasks().add(syncTaskFactory.createIncrementalDataSyncTask(each.getConcurrency(), each.getDumperConfiguration(), each.getImporterConfiguration()));
+            shardingScalingJob.getIncrementalDataTasks().add(syncTaskFactory.createIncrementalDataSyncTask(
+                    shardingScalingJob.getJobId(), each.getConcurrency(), each.getDumperConfiguration(), each.getImporterConfiguration()));
         }
     }
     

@@ -74,7 +74,8 @@ public final class SyncPositionResumer {
         for (SyncConfiguration each : shardingScalingJob.getSyncConfigurations()) {
             MetaDataManager metaDataManager = new MetaDataManager(dataSourceManager.getDataSource(each.getDumperConfiguration().getDataSourceConfiguration()));
             for (Entry<String, PositionManager<InventoryPosition>> entry : getInventoryPositionMap(each.getDumperConfiguration(), resumeBreakPointManager).entrySet()) {
-                result.add(syncTaskFactory.createInventoryDataSyncTask(newInventoryDumperConfiguration(each.getDumperConfiguration(), metaDataManager, entry), each.getImporterConfiguration()));
+                result.add(syncTaskFactory.createInventoryDataSyncTask(
+                        shardingScalingJob.getJobId(), newInventoryDumperConfiguration(each.getDumperConfiguration(), metaDataManager, entry), each.getImporterConfiguration()));
             }
         }
         return result;
@@ -103,7 +104,8 @@ public final class SyncPositionResumer {
     private void resumeIncrementalPosition(final ShardingScalingJob shardingScalingJob, final ResumeBreakPointManager resumeBreakPointManager) {
         for (SyncConfiguration each : shardingScalingJob.getSyncConfigurations()) {
             each.getDumperConfiguration().setPositionManager(resumeBreakPointManager.getIncrementalPositionManagerMap().get(each.getDumperConfiguration().getDataSourceName()));
-            shardingScalingJob.getIncrementalDataTasks().add(syncTaskFactory.createIncrementalDataSyncTask(each.getConcurrency(), each.getDumperConfiguration(), each.getImporterConfiguration()));
+            shardingScalingJob.getIncrementalDataTasks().add(syncTaskFactory.createIncrementalDataSyncTask(
+                    shardingScalingJob.getJobId(), each.getConcurrency(), each.getDumperConfiguration(), each.getImporterConfiguration()));
         }
     }
     

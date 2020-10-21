@@ -40,6 +40,11 @@ public final class InventoryDataScalingTaskGroup extends AbstractShardingScaling
     }
     
     @Override
+    public String getTaskId() {
+        return null;
+    }
+    
+    @Override
     public void start() {
         super.start();
         for (ScalingTask<InventoryPosition> each : scalingTasks) {

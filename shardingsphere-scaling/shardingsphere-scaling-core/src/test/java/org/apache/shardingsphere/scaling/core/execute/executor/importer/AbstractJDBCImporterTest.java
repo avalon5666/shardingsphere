@@ -29,6 +29,7 @@ import org.apache.shardingsphere.scaling.core.execute.executor.record.FinishedRe
 import org.apache.shardingsphere.scaling.core.execute.executor.record.Record;
 import org.apache.shardingsphere.scaling.core.execute.executor.record.RecordUtil;
 import org.apache.shardingsphere.scaling.core.job.position.NopPosition;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -84,7 +85,7 @@ public final class AbstractJDBCImporterTest {
     
     @Before
     public void setUp() throws SQLException {
-        jdbcImporter = new AbstractJDBCImporter(getImporterConfiguration(), dataSourceManager) {
+        jdbcImporter = new AbstractJDBCImporter(getImporterConfiguration(), new TaskContext(1, "", dataSourceManager)) {
             
             @Override
             protected AbstractSQLBuilder createSQLBuilder() {

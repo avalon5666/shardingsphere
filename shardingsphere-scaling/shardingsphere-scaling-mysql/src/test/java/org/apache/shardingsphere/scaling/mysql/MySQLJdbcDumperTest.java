@@ -22,6 +22,7 @@ import org.apache.shardingsphere.scaling.core.config.DumperConfiguration;
 import org.apache.shardingsphere.scaling.core.config.InventoryDumperConfiguration;
 import org.apache.shardingsphere.scaling.core.config.JDBCScalingDataSourceConfiguration;
 import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,7 +55,7 @@ public final class MySQLJdbcDumperTest {
     @Before
     public void setUp() {
         dataSourceManager = new DataSourceManager();
-        mySQLJdbcDumper = new MySQLJdbcDumper(mockInventoryDumperConfiguration(), dataSourceManager);
+        mySQLJdbcDumper = new MySQLJdbcDumper(mockInventoryDumperConfiguration(), new TaskContext(1, "", dataSourceManager));
     }
     
     private InventoryDumperConfiguration mockInventoryDumperConfiguration() {

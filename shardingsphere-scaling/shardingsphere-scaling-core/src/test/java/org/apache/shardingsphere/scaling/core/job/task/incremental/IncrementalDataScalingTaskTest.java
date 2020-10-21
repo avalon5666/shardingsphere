@@ -51,7 +51,7 @@ public final class IncrementalDataScalingTaskTest {
     @Before
     public void setUp() {
         ScalingContext.getInstance().init(new ServerConfiguration());
-        incrementalDataSyncTask = new DefaultSyncTaskFactory().createIncrementalDataSyncTask(3, mockDumperConfig(), mockImporterConfiguration());
+        incrementalDataSyncTask = new DefaultSyncTaskFactory().createIncrementalDataSyncTask(1, 3, mockDumperConfig(), mockImporterConfiguration());
     }
     
     @Test

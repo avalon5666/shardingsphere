@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.scaling.core.execute.executor.importer;
 
+import io.prometheus.client.Histogram;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.scaling.core.config.ImporterConfiguration;
 import org.apache.shardingsphere.scaling.core.constant.ScalingConstant;
-import org.apache.shardingsphere.scaling.core.datasource.DataSourceManager;
 import org.apache.shardingsphere.scaling.core.exception.SyncTaskExecuteException;
 import org.apache.shardingsphere.scaling.core.execute.executor.AbstractShardingScalingExecutor;
 import org.apache.shardingsphere.scaling.core.execute.executor.channel.Channel;
@@ -31,6 +31,7 @@ import org.apache.shardingsphere.scaling.core.execute.executor.record.FinishedRe
 import org.apache.shardingsphere.scaling.core.execute.executor.record.Record;
 import org.apache.shardingsphere.scaling.core.execute.executor.record.RecordUtil;
 import org.apache.shardingsphere.scaling.core.job.position.IncrementalPosition;
+import org.apache.shardingsphere.scaling.core.job.task.TaskContext;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -47,18 +48,20 @@ import java.util.List;
 @Slf4j
 public abstract class AbstractJDBCImporter extends AbstractShardingScalingExecutor<IncrementalPosition> implements Importer {
     
+    private static final Histogram FLUSH_LATENCY = Histogram.build().name("flushLatencyOfImporter").help("flush latency of importer").labelNames("jobId", "taskId").create().register();
+    
     private final ImporterConfiguration importerConfig;
     
-    private final DataSourceManager dataSourceManager;
+    private final TaskContext taskContext;
     
     private final AbstractSQLBuilder sqlBuilder;
     
     @Setter
     private Channel channel;
     
-    protected AbstractJDBCImporter(final ImporterConfiguration importerConfig, final DataSourceManager dataSourceManager) {
+    protected AbstractJDBCImporter(final ImporterConfiguration importerConfig, final TaskContext taskContext) {
         this.importerConfig = importerConfig;
-        this.dataSourceManager = dataSourceManager;
+        this.taskContext = taskContext;
         sqlBuilder = createSQLBuilder();
     }
     
@@ -80,7 +83,7 @@ public abstract class AbstractJDBCImporter extends AbstractShardingScalingExecut
         while (isRunning()) {
             List<Record> records = channel.fetchRecords(100, 3);
             if (null != records && !records.isEmpty()) {
-                flush(dataSourceManager.getDataSource(importerConfig.getDataSourceConfiguration()), records);
+                flush(taskContext.getDataSourceManager().getDataSource(importerConfig.getDataSourceConfiguration()), records);
                 if (FinishedRecord.class.equals(records.get(records.size() - 1).getClass())) {
                     channel.ack();
                     break;
@@ -109,11 +112,13 @@ public abstract class AbstractJDBCImporter extends AbstractShardingScalingExecut
     private List<Record> doFlush(final DataSource dataSource, final List<Record> buffer) {
         int i = 0;
         try (Connection connection = dataSource.getConnection()) {
+            final Histogram.Timer flushTime = FLUSH_LATENCY.labels(String.valueOf(taskContext.getJobId()), taskContext.getTaskId()).startTimer();
             connection.setAutoCommit(false);
             for (; i < buffer.size(); i++) {
                 execute(connection, buffer.get(i));
             }
             connection.commit();
+            flushTime.observeDuration();
         } catch (final SQLException ex) {
             log.error("flush failed: {}", buffer.get(i), ex);
             return buffer.subList(i, buffer.size());
